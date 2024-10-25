@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LED Control</title>
+</head>
+<body>
+  <h1>LED Control Panel</h1>
+  <button onclick="controlLED('ON')">Turn ON</button>
+  <button onclick="controlLED('OFF')">Turn OFF</button>
+
+  <script>
+    async function controlLED(status) {
+      const response = await fetch('http://localhost:5000/api/led/status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status })
+      });
+      const result = await response.json();
+      alert(result.message);
+    }
+  </script>
+</body>
+</html>
