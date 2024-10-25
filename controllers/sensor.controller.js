@@ -42,9 +42,13 @@ export const getDHTData = async (req, res) => {
   export const setDHTData = async (req, res) => {
     try {
       const { temperature, humidity } = req.body;
-      const newDHTData = new DHT({ temperature, humidity });
-      await newDHTData.save();
-      res.send({ message: "DHT11 data updated", temperature, humidity });
+      // Update or insert the DHT data in the database
+      const updatedDHTData = await DHT.findOneAndUpdate(
+        {},
+        { temperature, humidity },
+        { new: true, upsert: true } // Upsert: update if exists, insert if not
+      );
+      res.send({ message: "DHT11 data updated", temperature: updatedDHTData.temperature, humidity: updatedDHTData.humidity });
     } catch (error) {
       res.status(500).send({ message: "Error updating DHT11 data" });
     }

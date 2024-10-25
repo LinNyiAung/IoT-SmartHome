@@ -44,5 +44,24 @@ async function fetchDHTData() {
 // Initial load of DHT data
 fetchDHTData();
   </script>
+
+<script>
+  const socket = new WebSocket("ws://localhost:5000");
+
+  socket.onopen = () => {
+    console.log("Connected to WebSocket");
+  };
+
+  socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log("Received WebSocket data:", data);
+    document.getElementById("temperature").textContent = `Temperature: ${data.temperature} °C`;
+    document.getElementById("humidity").textContent = `Humidity: ${data.humidity} %`;
+  };
+
+  socket.onerror = (error) => {
+    console.error("WebSocket error:", error);
+  };
+</script>
 </body>
 </html>
