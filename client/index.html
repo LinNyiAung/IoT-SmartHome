@@ -3,12 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LED Control</title>
+  <title>LED and Sensor Control Panel</title>
 </head>
 <body>
-  <h1>LED Control Panel</h1>
+  <h1>IoT Control Panel</h1>
+  
+  <!-- LED Control Section -->
+  <h2>LED Control</h2>
   <button onclick="controlLED('ON')">Turn ON</button>
   <button onclick="controlLED('OFF')">Turn OFF</button>
+
+  <!-- DHT11 Sensor Data Section -->
+  <h2>Temperature and Humidity</h2>
+  <div>
+    <p id="temperature">Temperature: -- °C</p>
+    <p id="humidity">Humidity: -- %</p>
+  </div>
+  <button onclick="fetchDHTData()">Refresh Data</button>
 
   <script>
     async function controlLED(status) {
@@ -22,6 +33,16 @@
       const result = await response.json();
       alert(result.message);
     }
+
+async function fetchDHTData() {
+  const response = await fetch('http://localhost:5000/api/dht'); // Correct endpoint
+  const data = await response.json();
+  document.getElementById("temperature").textContent = `Temperature: ${data.temperature} °C`;
+  document.getElementById("humidity").textContent = `Humidity: ${data.humidity} %`;
+}
+
+// Initial load of DHT data
+fetchDHTData();
   </script>
 </body>
 </html>

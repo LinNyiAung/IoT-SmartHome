@@ -1,9 +1,9 @@
 import express from "express";
-import LED from "./models/sensor.model.js";
+
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import cors from "cors";
-import ledRoutes from "./routes/sensor.route.js";
+import sensorRoutes from "./routes/sensor.route.js";
 dotenv.config();
 
 
@@ -20,8 +20,10 @@ mongoose.connect(process.env.MONGO)
 
 
 
-// Use LED routes
-app.use('/api/led', ledRoutes);
+
+// Separate LED and DHT routes
+app.use('/api/led', sensorRoutes); // LED-specific routes
+app.use('/api/dht', sensorRoutes); // DHT-specific routes
 
 // Start the server
 const PORT = 5000;

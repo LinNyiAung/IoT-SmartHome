@@ -1,18 +1,25 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
+#include <DHT.h>
 
 const char* ssid = "MPT KTN";
 const char* password = "09799839789";
-const char* serverUrl = "http://192.168.1.2:5000/api/led/status"; // Replace with server IP
 
-WiFiClient client;  // Create a WiFiClient instance
-#define LED_PIN D1  // LED pin
+#define DHTPIN D4  // DHT11 connected to GPIO2 (D4 on NodeMCU)
+#define DHTTYPE DHT11
+DHT dht(DHTPIN, DHTTYPE);
+
+const char* ledStatusUrl = "http://192.168.1.2:5000/api/led/status";
+const char* dhtDataUrl = "http://192.168.1.2:5000/api/dht";
+
+WiFiClient client;
+#define LED_PIN D1
 
 void setup() {
   Serial.begin(115200);
   pinMode(LED_PIN, OUTPUT);
+  dht.begin();
 
-  // Connect to WiFi
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
@@ -23,10 +30,32 @@ void setup() {
 
 void loop() {
   if (WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
-    http.begin(client, serverUrl);  // Pass WiFiClient instance and server URL
+    // Send DHT11 data
+    float humidity = dht.readHumidity();
+    float temperature = dht.readTemperature();
+    
+    if (!isnan(humidity) && !isnan(temperature)) {
+      HTTPClient http;
+      http.begin(client, dhtDataUrl);
+      http.addHeader("Content-Type", "application/json");
+      
+      String postData = "{\"temperature\":" + String(temperature) + ",\"humidity\":" + String(humidity) + "}";
+      Serial.print(postData);
+      int httpCode = http.POST(postData);
+      
+      if (httpCode > 0) {
+        Serial.println("DHT data sent successfully");
+      } else {
+        Serial.println("Failed to send DHT data");
+      }
+      http.end();
+    }
 
+    // Check LED status
+    HTTPClient http;
+    http.begin(client, ledStatusUrl);
     int httpCode = http.GET();
+    
     if (httpCode == HTTP_CODE_OK) {
       String payload = http.getString();
       Serial.println("LED Status: " + payload);
@@ -39,5 +68,5 @@ void loop() {
     }
     http.end();
   }
-  delay(5000);  // Check every 5 seconds
+  delay(5000);  // 5-second delay between loops
 }
