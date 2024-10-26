@@ -1,11 +1,7 @@
 import express from "express";
-import { getLEDStatus, setLEDStatus, getDHTData, setDHTData } from "../controllers/sensor.controller.js";
+import { getDHTData, setDHTData } from "../controllers/dht.controller.js";
 
 const router = express.Router();
-
-// LED routes
-router.get('/status', getLEDStatus);
-router.post('/status', setLEDStatus);
 
 // DHT routes
 router.get('/dhtdata', getDHTData); // For fetching the latest DHT data
