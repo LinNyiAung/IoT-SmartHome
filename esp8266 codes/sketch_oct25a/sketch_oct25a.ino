@@ -11,13 +11,16 @@ DHT dht(DHTPIN, DHTTYPE);
 
 const char* ledStatusUrl = "http://192.168.1.9:5000/api/led/status";
 const char* dhtDataUrl = "http://192.168.1.9:5000/api/dht/dhtdata";
+const char* pirDataUrl = "http://192.168.1.9:5000/api/pir/motion";
 
 WiFiClient client;
 #define LED_PIN D1
+#define PIR_PIN D2
 
 void setup() {
   Serial.begin(115200);
   pinMode(LED_PIN, OUTPUT);
+  pinMode(PIR_PIN, INPUT);
   dht.begin();
 
   WiFi.begin(ssid, password);
@@ -66,6 +69,31 @@ void loop() {
         digitalWrite(LED_PIN, LOW);
       }
     }
+    http.end();
+
+
+    // Send PIR sensor data
+    int motionDetected = digitalRead(PIR_PIN);
+    if (motionDetected == HIGH) {
+    // Motion detected, turn on the LED
+    Serial.println("Motion Detected!");
+     
+  } else {
+    // No motion, turn off the LED
+    Serial.println("No Motion");
+  
+  }
+    http.begin(client, pirDataUrl);
+    http.addHeader("Content-Type", "application/json");
+
+    String pirPostData = "{\"motionDetected\":" + String(motionDetected == HIGH) + "}";
+    Serial.println(pirPostData);
+    http.POST(pirPostData);
+    if (httpCode > 0) {
+        Serial.println("PIR data sent successfully");
+      } else {
+        Serial.println("Failed to send PIR data");
+      }
     http.end();
   }
   delay(5000);  // 5-second delay between loops

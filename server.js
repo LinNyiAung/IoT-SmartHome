@@ -6,6 +6,7 @@ import cors from "cors";
 import { initWebSocketServer } from "./utils/websocket.js"; // WebSocket logic
 import ledRoutes from "./routes/led.route.js";
 import dhtRoutes from "./routes/dht.route.js";
+import pirRoutes from "./routes/pir.route.js";
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ mongoose.connect(process.env.MONGO)
 // Routes
 app.use('/api/led', ledRoutes);
 app.use('/api/dht', dhtRoutes);
+app.use('/api/pir', pirRoutes);
 
 // Initialize WebSocket server
 initWebSocketServer(server);

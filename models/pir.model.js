@@ -1,8 +1,9 @@
+// pir.model.js
 import mongoose from "mongoose";
 
 const pirSchema = new mongoose.Schema(
   {
-    motion: {
+    motionDetected: {
       type: Boolean,
       required: true,
     },
@@ -11,5 +12,4 @@ const pirSchema = new mongoose.Schema(
 );
 
 const PIR = mongoose.model('PIR', pirSchema);
-
 export default PIR;

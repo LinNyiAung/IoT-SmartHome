@@ -21,6 +21,9 @@
   </div>
   <button onclick="fetchDHTData()">Refresh Data</button>
 
+  <h2>Motion Detection</h2>
+<p id="motionStatus">Motion: --</p>
+
   <script>
     async function controlLED(status) {
       const response = await fetch('http://localhost:5000/api/led/status', {
@@ -57,6 +60,7 @@ fetchDHTData();
     console.log("Received WebSocket data:", data);
     document.getElementById("temperature").textContent = `Temperature: ${data.temperature} °C`;
     document.getElementById("humidity").textContent = `Humidity: ${data.humidity} %`;
+    document.getElementById("motionStatus").textContent = `Motion: ${data.motionDetected ? 'Detected' : 'Not Detected'}`;
   };
 
   socket.onerror = (error) => {

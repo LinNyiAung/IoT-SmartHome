@@ -1,30 +1,31 @@
 import { WebSocketServer } from "ws";
 import DHT from "../models/dht.model.js"; // Import DHT model
+import PIR from "../models/pir.model.js";
 
 export const initWebSocketServer = (server) => {
-  const wss = new WebSocketServer({ server }); // Create WebSocket server
+  const wss = new WebSocketServer({ server });
 
   wss.on("connection", (ws) => {
     console.log("New WebSocket connection");
 
     ws.on("close", () => console.log("WebSocket connection closed"));
 
-    // Fetch and send the latest DHT data every 5 seconds
     const interval = setInterval(async () => {
       try {
-        const dhtData = await DHT.findOne(); // Retrieve the latest DHT data
-        if (dhtData) {
-          ws.send(JSON.stringify({
-            temperature: dhtData.temperature,
-            humidity: dhtData.humidity,
-          }));
-        }
+        // Fetch DHT data
+        const dhtData = await DHT.findOne();
+        const pirData = await PIR.findOne(); // Fetch PIR data
+
+        ws.send(JSON.stringify({
+          temperature: dhtData?.temperature || 0,
+          humidity: dhtData?.humidity || 0,
+          motionDetected: pirData?.motionDetected || false,
+        }));
       } catch (error) {
-        console.error("Error broadcasting DHT data:", error);
+        console.error("Error broadcasting sensor data:", error);
       }
     }, 5000);
 
-    // Clear the interval when WebSocket is closed
     ws.on("close", () => clearInterval(interval));
   });
 };
