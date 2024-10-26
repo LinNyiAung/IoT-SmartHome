@@ -9,8 +9,8 @@ const char* password = "09799839789";
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
-const char* ledStatusUrl = "http://192.168.1.2:5000/api/led/status";
-const char* dhtDataUrl = "http://192.168.1.2:5000/api/dht";
+const char* ledStatusUrl = "http://192.168.1.9:5000/api/led/status";
+const char* dhtDataUrl = "http://192.168.1.9:5000/api/dht/dhtdata";
 
 WiFiClient client;
 #define LED_PIN D1
