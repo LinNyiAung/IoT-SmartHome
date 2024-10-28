@@ -9,9 +9,16 @@ const char* password = "09799839789";
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
-const char* ledStatusUrl = "http://192.168.1.9:5000/api/led/status";
-const char* dhtDataUrl = "http://192.168.1.9:5000/api/dht/dhtdata";
-const char* pirDataUrl = "http://192.168.1.9:5000/api/pir/motion";
+#define TRIG_PIN D5
+#define ECHO_PIN D6
+
+long duration;
+int distance;
+
+const char* ledStatusUrl = "http://192.168.1.8:5000/api/led/status";
+const char* dhtDataUrl = "http://192.168.1.8:5000/api/dht/dhtdata";
+const char* pirDataUrl = "http://192.168.1.8:5000/api/pir/motion";
+const char* ultrasonicDataUrl = "http://192.168.1.8:5000/api/ultrasonic/distance";
 
 WiFiClient client;
 #define LED_PIN D1
@@ -21,6 +28,8 @@ void setup() {
   Serial.begin(115200);
   pinMode(LED_PIN, OUTPUT);
   pinMode(PIR_PIN, INPUT);
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
   dht.begin();
 
   WiFi.begin(ssid, password);
@@ -95,6 +104,47 @@ void loop() {
         Serial.println("Failed to send PIR data");
       }
     http.end();
+
+  // Send ultrasonic data
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+  
+  duration = pulseIn(ECHO_PIN, HIGH);
+  distance = microsecondsToCentimeters(duration);
+
+  
+  http.begin(client, ultrasonicDataUrl);
+  http.addHeader("Content-Type", "application/json");
+  
+  String postData = "{\"distance\":" + String(distance) + "}";
+  Serial.println(postData);
+  http.POST(postData);
+  if (httpCode > 0) {
+    Serial.println("Ultrasonic data sent successfully");
+  } else {
+    Serial.println("Failed to send ultrasonic data");
+  }
+  http.end();
   }
   delay(5000);  // 5-second delay between loops
+}
+
+
+long microsecondsToInches(long microseconds) {
+  // According to Parallax's datasheet for the PING))), there are 73.746
+  // microseconds per inch (i.e. sound travels at 1130 feet per second).
+  // This gives the distance travelled by the ping, outbound and return,
+  // so we divide by 2 to get the distance of the obstacle.
+  // See: https://www.parallax.com/package/ping-ultrasonic-distance-sensor-downloads/
+  return microseconds / 74 / 2;
+}
+
+long microsecondsToCentimeters(long microseconds) {
+  // The speed of sound is 340 m/s or 29 microseconds per centimeter.
+  // The ping travels out and back, so to find the distance of the object we
+  // take half of the distance travelled.
+  return microseconds / 29 / 2;
 }

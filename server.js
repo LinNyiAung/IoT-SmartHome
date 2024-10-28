@@ -7,6 +7,7 @@ import { initWebSocketServer } from "./utils/websocket.js"; // WebSocket logic
 import ledRoutes from "./routes/led.route.js";
 import dhtRoutes from "./routes/dht.route.js";
 import pirRoutes from "./routes/pir.route.js";
+import ultrasonicRoutes from "./routes/ultrasonic.route.js";
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ mongoose.connect(process.env.MONGO)
 app.use('/api/led', ledRoutes);
 app.use('/api/dht', dhtRoutes);
 app.use('/api/pir', pirRoutes);
+app.use('/api/ultrasonic', ultrasonicRoutes);
 
 // Initialize WebSocket server
 initWebSocketServer(server);
