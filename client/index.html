@@ -27,6 +27,9 @@
 <h2>Ultrasonic Sensor</h2>
 <p id="distance">Distance: -- cm</p>
 
+<h2>LDR Sensor</h2>
+<p id="lightIntensity">Light Intensity: --</p>
+
   <script>
     async function controlLED(status) {
       const response = await fetch('http://localhost:5000/api/led/status', {
@@ -65,6 +68,7 @@ fetchDHTData();
     document.getElementById("humidity").textContent = `Humidity: ${data.humidity} %`;
     document.getElementById("motionStatus").textContent = `Motion: ${data.motionDetected ? 'Detected' : 'Not Detected'}`;
     document.getElementById("distance").textContent = `Distance: ${data.distance} cm`;
+    document.getElementById("lightIntensity").textContent = `Light Intensity: ${data.lightIntensity}`;
   };
 
   socket.onerror = (error) => {
