@@ -2,21 +2,23 @@
 #include <ESP8266HTTPClient.h>
 #include <DHT.h>
 
+// WiFi credentials
 const char* ssid = "MPT KTN";
 const char* password = "09799839789";
 
-#define DHTPIN D4  // DHT11 connected to GPIO2 (D4 on NodeMCU)
+// Sensor and device pins
+#define DHTPIN D4  
 #define DHTTYPE DHT11
-DHT dht(DHTPIN, DHTTYPE);
-
 #define LDR_PIN D7
-
 #define TRIG_PIN D5
 #define ECHO_PIN D6
+#define LED_PIN D1
+#define PIR_PIN D2
 
-long duration;
-int distance;
+// DHT11 setup
+DHT dht(DHTPIN, DHTTYPE);
 
+// API URLs
 const char* ledStatusUrl = "http://192.168.1.10:5000/api/led/status";
 const char* dhtDataUrl = "http://192.168.1.10:5000/api/dht/dhtdata";
 const char* pirDataUrl = "http://192.168.1.10:5000/api/pir/motion";
@@ -24,8 +26,25 @@ const char* ultrasonicDataUrl = "http://192.168.1.10:5000/api/ultrasonic/distanc
 const char* ldrDataUrl = "http://192.168.1.10:5000/api/ldr/light";
 
 WiFiClient client;
-#define LED_PIN D1
-#define PIR_PIN D2
+
+// Helper functions
+long microsecondsToCentimeters(long microseconds) {
+  return microseconds / 29 / 2;
+}
+
+void sendPostRequest(const char* url, String postData) {
+  HTTPClient http;
+  http.begin(client, url);
+  http.addHeader("Content-Type", "application/json");
+  int httpCode = http.POST(postData);
+
+  if (httpCode > 0) {
+    Serial.println("Data sent successfully: " + postData);
+  } else {
+    Serial.println("Failed to send data: " + postData);
+  }
+  http.end();
+}
 
 void setup() {
   Serial.begin(115200);
@@ -35,6 +54,7 @@ void setup() {
   pinMode(ECHO_PIN, INPUT);
   dht.begin();
 
+  // WiFi connection
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
@@ -45,131 +65,48 @@ void setup() {
 
 void loop() {
   if (WiFi.status() == WL_CONNECTED) {
-    // Send DHT11 data
+
+    // DHT11 Data
     float humidity = dht.readHumidity();
     float temperature = dht.readTemperature();
-    
     if (!isnan(humidity) && !isnan(temperature)) {
-      HTTPClient http;
-      http.begin(client, dhtDataUrl);
-      http.addHeader("Content-Type", "application/json");
-      
-      String postData = "{\"temperature\":" + String(temperature) + ",\"humidity\":" + String(humidity) + "}";
-      Serial.print(postData);
-      int httpCode = http.POST(postData);
-      
-      if (httpCode > 0) {
-        Serial.println("DHT data sent successfully");
-      } else {
-        Serial.println("Failed to send DHT data");
-      }
-      http.end();
+      String dhtPostData = "{\"temperature\":" + String(temperature) + ",\"humidity\":" + String(humidity) + "}";
+      sendPostRequest(dhtDataUrl, dhtPostData);
     }
 
-    // Check LED status
+    // LED Status Check
     HTTPClient http;
     http.begin(client, ledStatusUrl);
     int httpCode = http.GET();
-    
     if (httpCode == HTTP_CODE_OK) {
-      String payload = http.getString();
-      Serial.println("LED Status: " + payload);
-
-      if (payload == "ON") {
-        digitalWrite(LED_PIN, HIGH);
-      } else if (payload == "OFF") {
-        digitalWrite(LED_PIN, LOW);
-      }
+      String ledStatus = http.getString();
+      Serial.println("LED Status: " + ledStatus);
+      digitalWrite(LED_PIN, ledStatus == "ON" ? HIGH : LOW);
     }
     http.end();
 
-
-    // Send PIR sensor data
+    // PIR Sensor Data
     int motionDetected = digitalRead(PIR_PIN);
-    if (motionDetected == HIGH) {
-    // Motion detected, turn on the LED
-    Serial.println("Motion Detected!");
-     
-  } else {
-    // No motion, turn off the LED
-    Serial.println("No Motion");
-  
-  }
-    http.begin(client, pirDataUrl);
-    http.addHeader("Content-Type", "application/json");
+    Serial.println(motionDetected ? "Motion Detected!" : "No Motion");
+    String pirPostData = "{\"motionDetected\":" + String(motionDetected) + "}";
+    sendPostRequest(pirDataUrl, pirPostData);
 
-    String pirPostData = "{\"motionDetected\":" + String(motionDetected == HIGH) + "}";
-    Serial.println(pirPostData);
-    http.POST(pirPostData);
-    if (httpCode > 0) {
-        Serial.println("PIR data sent successfully");
-      } else {
-        Serial.println("Failed to send PIR data");
-      }
-    http.end();
+    // Ultrasonic Data
+    digitalWrite(TRIG_PIN, LOW);
+    delayMicroseconds(2);
+    digitalWrite(TRIG_PIN, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(TRIG_PIN, LOW);
+    long duration = pulseIn(ECHO_PIN, HIGH);
+    int distance = microsecondsToCentimeters(duration);
+    String ultrasonicPostData = "{\"distance\":" + String(distance) + "}";
+    sendPostRequest(ultrasonicDataUrl, ultrasonicPostData);
 
-  // Send ultrasonic data
-  digitalWrite(TRIG_PIN, LOW);
-  delayMicroseconds(2);
-  digitalWrite(TRIG_PIN, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(TRIG_PIN, LOW);
-  
-  duration = pulseIn(ECHO_PIN, HIGH);
-  distance = microsecondsToCentimeters(duration);
-
-  
-  http.begin(client, ultrasonicDataUrl);
-  http.addHeader("Content-Type", "application/json");
-  
-  String postData = "{\"distance\":" + String(distance) + "}";
-  Serial.println(postData);
-  http.POST(postData);
-  if (httpCode > 0) {
-    Serial.println("Ultrasonic data sent successfully");
-  } else {
-    Serial.println("Failed to send ultrasonic data");
-  }
-  http.end();
-
-
-  // Reading LDR sensor data
+    // LDR Data
     int ldrValue = digitalRead(LDR_PIN);
-    Serial.print("LDR Value: ");
-    Serial.println(ldrValue);
-
-    // Sending LDR data
-    
-    http.begin(client, ldrDataUrl);
-    http.addHeader("Content-Type", "application/json");
-
     String ldrPostData = "{\"lightIntensity\":" + String(ldrValue) + "}";
-    Serial.println(ldrPostData);
-    http.POST(ldrPostData);
-
-    if (httpCode > 0) {
-      Serial.println("LDR data sent successfully");
-    } else {
-      Serial.println("Failed to send LDR data");
-    }
-    http.end();
+    sendPostRequest(ldrDataUrl, ldrPostData);
   }
+
   delay(5000);  // 5-second delay between loops
-}
-
-
-long microsecondsToInches(long microseconds) {
-  // According to Parallax's datasheet for the PING))), there are 73.746
-  // microseconds per inch (i.e. sound travels at 1130 feet per second).
-  // This gives the distance travelled by the ping, outbound and return,
-  // so we divide by 2 to get the distance of the obstacle.
-  // See: https://www.parallax.com/package/ping-ultrasonic-distance-sensor-downloads/
-  return microseconds / 74 / 2;
-}
-
-long microsecondsToCentimeters(long microseconds) {
-  // The speed of sound is 340 m/s or 29 microseconds per centimeter.
-  // The ping travels out and back, so to find the distance of the object we
-  // take half of the distance travelled.
-  return microseconds / 29 / 2;
 }
