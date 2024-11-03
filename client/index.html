@@ -30,6 +30,11 @@
 <h2>LDR Sensor</h2>
 <p id="lightIntensity">Light Intensity: --</p>
 
+<h2>Servo Motor Control</h2>
+<label for="servoAngle">Set Angle (0-180): </label>
+<input type="number" id="servoAngle" placeholder="Set Servo Angle (0-180)" min="0" max="180">
+<button onclick="controlServo()">Set Angle</button>
+
   <script>
     async function controlLED(status) {
       const response = await fetch('http://localhost:5000/api/led/status', {
@@ -53,6 +58,22 @@ async function fetchDHTData() {
 // Initial load of DHT data
 fetchDHTData();
   </script>
+
+
+<script>
+  async function controlServo() {
+    const angle = document.getElementById('servoAngle').value;
+    const response = await fetch('http://localhost:5000/api/servo/angle', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ angle })
+    });
+    const result = await response.json();
+    alert(result.message);
+  }
+</script>
 
 <script>
   const socket = new WebSocket("ws://localhost:5000");

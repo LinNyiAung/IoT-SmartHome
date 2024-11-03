@@ -1,6 +1,9 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include <DHT.h>
+#include <Servo.h>
+
+Servo myServo;
 
 // WiFi credentials
 const char* ssid = "MPT KTN";
@@ -14,6 +17,7 @@ const char* password = "09799839789";
 #define ECHO_PIN D6
 #define LED_PIN D1
 #define PIR_PIN D2
+#define SERVO_PIN D3
 
 // DHT11 setup
 DHT dht(DHTPIN, DHTTYPE);
@@ -24,6 +28,7 @@ const char* dhtDataUrl = "http://192.168.1.10:5000/api/dht/dhtdata";
 const char* pirDataUrl = "http://192.168.1.10:5000/api/pir/motion";
 const char* ultrasonicDataUrl = "http://192.168.1.10:5000/api/ultrasonic/distance";
 const char* ldrDataUrl = "http://192.168.1.10:5000/api/ldr/light";
+const char* servoControlUrl = "http://192.168.1.10:5000/api/servo/angle";
 
 WiFiClient client;
 
@@ -52,6 +57,8 @@ void setup() {
   pinMode(PIR_PIN, INPUT);
   pinMode(TRIG_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT);
+  myServo.attach(SERVO_PIN);
+    myServo.write(0);
   dht.begin();
 
   // WiFi connection
@@ -61,6 +68,33 @@ void setup() {
     Serial.println("Connecting to WiFi...");
   }
   Serial.println("Connected to WiFi");
+}
+
+void controlLED() {
+  HTTPClient httpLed;
+  httpLed.begin(client, ledStatusUrl);
+  int httpCode = httpLed.GET();
+  if (httpCode == HTTP_CODE_OK) {
+    String ledStatus = httpLed.getString();
+    Serial.println("LED Status: " + ledStatus);
+    digitalWrite(LED_PIN, ledStatus == "ON" ? HIGH : LOW);
+  }
+  httpLed.end();
+}
+
+void controlServo() {
+  HTTPClient httpServo;
+  httpServo.begin(client, servoControlUrl);
+  int httpCode = httpServo.GET();
+  if (httpCode == HTTP_CODE_OK) {
+    String servoAngle = httpServo.getString();
+    int angle = servoAngle.toInt(); // Convert string to int
+    if (angle >= 0 && angle <= 180) { // Valid angle range for a servo motor
+      myServo.write(angle); // Move servo to the angle
+      Serial.println("Servo moved to angle: " + String(angle));
+    }
+  }
+  httpServo.end();
 }
 
 void loop() {
@@ -74,16 +108,7 @@ void loop() {
       sendPostRequest(dhtDataUrl, dhtPostData);
     }
 
-    // LED Status Check
-    HTTPClient http;
-    http.begin(client, ledStatusUrl);
-    int httpCode = http.GET();
-    if (httpCode == HTTP_CODE_OK) {
-      String ledStatus = http.getString();
-      Serial.println("LED Status: " + ledStatus);
-      digitalWrite(LED_PIN, ledStatus == "ON" ? HIGH : LOW);
-    }
-    http.end();
+    controlLED();
 
     // PIR Sensor Data
     int motionDetected = digitalRead(PIR_PIN);
@@ -106,6 +131,11 @@ void loop() {
     int ldrValue = digitalRead(LDR_PIN);
     String ldrPostData = "{\"lightIntensity\":" + String(ldrValue) + "}";
     sendPostRequest(ldrDataUrl, ldrPostData);
+
+
+    // Servo Control
+    controlServo();
+     
   }
 
   delay(5000);  // 5-second delay between loops

@@ -9,6 +9,7 @@ import dhtRoutes from "./routes/dht.route.js";
 import pirRoutes from "./routes/pir.route.js";
 import ultrasonicRoutes from "./routes/ultrasonic.route.js";
 import ldrRoutes from "./routes/ldr.route.js";
+import servoRoutes from "./routes/servo.route.js";
 
 dotenv.config();
 
@@ -30,6 +31,7 @@ app.use('/api/dht', dhtRoutes);
 app.use('/api/pir', pirRoutes);
 app.use('/api/ultrasonic', ultrasonicRoutes);
 app.use('/api/ldr', ldrRoutes);
+app.use('/api/servo', servoRoutes);
 
 // Initialize WebSocket server
 initWebSocketServer(server);
