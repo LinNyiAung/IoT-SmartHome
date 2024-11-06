@@ -138,5 +138,5 @@ void loop() {
      
   }
 
-  delay(5000);  // 5-second delay between loops
+  delay(1000);  // 5-second delay between loops
 }

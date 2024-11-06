@@ -3,98 +3,122 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LED and Sensor Control Panel</title>
+  <link rel="stylesheet" href="style.css">
+  <title>IoT Control Panel</title>
+  
 </head>
 <body>
   <h1>IoT Control Panel</h1>
   
   <!-- LED Control Section -->
-  <h2>LED Control</h2>
-  <button onclick="controlLED('ON')">Turn ON</button>
-  <button onclick="controlLED('OFF')">Turn OFF</button>
+  <section>
+    <h2>LED Control</h2>
+    <button onclick="controlLED('ON')">Turn ON</button>
+    <button onclick="controlLED('OFF')">Turn OFF</button>
+  </section>
 
   <!-- DHT11 Sensor Data Section -->
-  <h2>Temperature and Humidity</h2>
-  <div>
+  <section class="sensor-data">
+    <h2>Temperature and Humidity</h2>
     <p id="temperature">Temperature: -- °C</p>
     <p id="humidity">Humidity: -- %</p>
-  </div>
-  <button onclick="fetchDHTData()">Refresh Data</button>
+    <button onclick="fetchDHTData()">Refresh Data</button>
+  </section>
 
-  <h2>Motion Detection</h2>
-<p id="motionStatus">Motion: --</p>
+  <!-- Motion Detection -->
+  <section class="sensor-data">
+    <h2>Motion Detection</h2>
+    <p id="motionStatus">Motion: --</p>
+  </section>
 
-<h2>Ultrasonic Sensor</h2>
-<p id="distance">Distance: -- cm</p>
+  <!-- Ultrasonic Sensor -->
+  <section class="sensor-data">
+    <h2>Ultrasonic Sensor</h2>
+    <p id="distance">Distance: -- cm</p>
+  </section>
 
-<h2>LDR Sensor</h2>
-<p id="lightIntensity">Light Intensity: --</p>
+  <!-- LDR Sensor -->
+  <section class="sensor-data">
+    <h2>LDR Sensor</h2>
+    <p id="lightIntensity">Light Intensity: --</p>
+  </section>
 
-<h2>Servo Motor Control</h2>
-<label for="servoAngle">Set Angle (0-180): </label>
-<input type="number" id="servoAngle" placeholder="Set Servo Angle (0-180)" min="0" max="180">
-<button onclick="controlServo()">Set Angle</button>
+  <!-- Servo Motor Control -->
+  <section>
+    <h2>Servo Motor Control</h2>
+    <label for="servoAngle">Set Angle (0-180): </label>
+    <input type="number" id="servoAngle" placeholder="Set Servo Angle" min="0" max="180">
+    <button onclick="controlServo()">Set Angle</button>
+  </section>
 
   <script>
+    const apiUrl = 'http://localhost:5000/api';
+
+    // LED control function
     async function controlLED(status) {
-      const response = await fetch('http://localhost:5000/api/led/status', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ status })
-      });
-      const result = await response.json();
-      alert(result.message);
+      try {
+        const response = await fetch(`${apiUrl}/led/status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+        const result = await response.json();
+        alert(result.message);
+      } catch (error) {
+        console.error("Error controlling LED:", error);
+      }
     }
 
-async function fetchDHTData() {
-  const response = await fetch('http://localhost:5000/api/dht'); // Correct endpoint
-  const data = await response.json();
-  document.getElementById("temperature").textContent = `Temperature: ${data.temperature} °C`;
-  document.getElementById("humidity").textContent = `Humidity: ${data.humidity} %`;
-}
+    // Fetch DHT11 sensor data
+    async function fetchDHTData() {
+      try {
+        const response = await fetch(`${apiUrl}/dht`);
+        const data = await response.json();
+        document.getElementById("temperature").textContent = `Temperature: ${data.temperature} °C`;
+        document.getElementById("humidity").textContent = `Humidity: ${data.humidity} %`;
+      } catch (error) {
+        console.error("Error fetching DHT data:", error);
+      }
+    }
 
-// Initial load of DHT data
-fetchDHTData();
+    // Servo motor control function
+    async function controlServo() {
+      const angle = document.getElementById('servoAngle').value;
+      try {
+        const response = await fetch(`${apiUrl}/servo/angle`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ angle })
+        });
+        const result = await response.json();
+        alert(result.message);
+      } catch (error) {
+        console.error("Error controlling servo:", error);
+      }
+    }
+
+    // WebSocket connection for real-time sensor data updates
+    const socket = new WebSocket("ws://localhost:5000");
+
+    socket.onopen = () => {
+      console.log("Connected to WebSocket");
+    };
+
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      document.getElementById("temperature").textContent = `Temperature: ${data.temperature} °C`;
+      document.getElementById("humidity").textContent = `Humidity: ${data.humidity} %`;
+      document.getElementById("motionStatus").textContent = `Motion: ${data.motionDetected ? 'Detected' : 'Not Detected'}`;
+      document.getElementById("distance").textContent = `Distance: ${data.distance} cm`;
+      document.getElementById("lightIntensity").textContent = `Light Intensity: ${data.lightIntensity ? 'Not Detected' : 'Detected'}`;
+    };
+
+    socket.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
+
+    // Initial load of DHT data
+    fetchDHTData();
   </script>
-
-
-<script>
-  async function controlServo() {
-    const angle = document.getElementById('servoAngle').value;
-    const response = await fetch('http://localhost:5000/api/servo/angle', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ angle })
-    });
-    const result = await response.json();
-    alert(result.message);
-  }
-</script>
-
-<script>
-  const socket = new WebSocket("ws://localhost:5000");
-
-  socket.onopen = () => {
-    console.log("Connected to WebSocket");
-  };
-
-  socket.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    console.log("Received WebSocket data:", data);
-    document.getElementById("temperature").textContent = `Temperature: ${data.temperature} °C`;
-    document.getElementById("humidity").textContent = `Humidity: ${data.humidity} %`;
-    document.getElementById("motionStatus").textContent = `Motion: ${data.motionDetected ? 'Detected' : 'Not Detected'}`;
-    document.getElementById("distance").textContent = `Distance: ${data.distance} cm`;
-    document.getElementById("lightIntensity").textContent = `Light Intensity: ${data.lightIntensity}`;
-  };
-
-  socket.onerror = (error) => {
-    console.error("WebSocket error:", error);
-  };
-</script>
 </body>
 </html>

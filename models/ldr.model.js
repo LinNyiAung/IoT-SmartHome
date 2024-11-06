@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const ldrSchema = new mongoose.Schema(
   {
     lightIntensity: {
-      type: Number,  // Store the light intensity as a number
+      type: Boolean,  
       required: true,
     },
   },

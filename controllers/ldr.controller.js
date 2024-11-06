@@ -4,7 +4,7 @@ import LDR from "../models/ldr.model.js";
 export const getLDRData = async (req, res) => {
   try {
     const ldrData = await LDR.findOne().sort({ createdAt: -1 }); // Get latest data
-    res.send(ldrData || { lightIntensity: 0 });
+    res.send(ldrData || { lightIntensity: false });
   } catch (error) {
     res.status(500).send({ message: "Error fetching LDR data" });
   }
