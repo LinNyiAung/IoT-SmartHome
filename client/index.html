@@ -18,6 +18,12 @@
     <p id="ledStatus">LED Status: --</p>
   </section>
 
+  <!-- LDR Automation Control -->
+<section>
+  <h2>LED Automation Control</h2>
+  <button id="ldrledautomationToggle" onclick="ldrledtoggleAutomation()">Turn Off LDR LED Automation</button>
+</section>
+
   <!-- DHT11 Sensor Data Section -->
   <section class="sensor-data">
     <h2>Temperature and Humidity</h2>
@@ -98,6 +104,46 @@
       }
     }
 
+    let isLdrLedAutomationActive = true; // Assume ldr led automation is active by default
+
+// Fetch current ldr led automation status on load
+async function fetchLdrLedAutomationStatus() {
+  try {
+    const response = await fetch(`${apiUrl}/ldrledautomation/status`);
+    const data = await response.json();
+    isLdrLedAutomationActive = data.isActive;
+    ldrledupdateAutomationButton();
+  } catch (error) {
+    console.error("Error fetching automation status:", error);
+  }
+}
+
+// Toggle automation on/off
+async function ldrledtoggleAutomation() {
+  isLdrLedAutomationActive = !isLdrLedAutomationActive;
+  try {
+    const response = await fetch(`${apiUrl}/ldrledautomation/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isActive: isLdrLedAutomationActive })
+    });
+    const result = await response.json();
+    alert(result.message);
+    ldrledupdateAutomationButton();
+  } catch (error) {
+    console.error("Error updating automation status:", error);
+  }
+}
+
+// Update the button label based on automation status
+function ldrledupdateAutomationButton() {
+  const button = document.getElementById("ldrledautomationToggle");
+  button.textContent = isLdrLedAutomationActive ? "Turn Off LDR LED Automation" : "Turn On LDR LED Automation";
+}
+
+// Call this function when the page loads
+
+
     // WebSocket connection for real-time sensor data updates
     const socket = new WebSocket("ws://localhost:5000");
 
@@ -119,6 +165,8 @@
       console.error("WebSocket error:", error);
     };
 
+
+    fetchLdrLedAutomationStatus();
     // Initial load of DHT data
     fetchDHTData();
   </script>

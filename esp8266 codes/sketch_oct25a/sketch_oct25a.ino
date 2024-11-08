@@ -23,12 +23,13 @@ const char* password = "09799839789";
 DHT dht(DHTPIN, DHTTYPE);
 
 // API URLs
-const char* ledStatusUrl = "http://192.168.1.7:5000/api/led/status";
-const char* dhtDataUrl = "http://192.168.1.7:5000/api/dht/dhtdata";
-const char* pirDataUrl = "http://192.168.1.7:5000/api/pir/motion";
-const char* ultrasonicDataUrl = "http://192.168.1.7:5000/api/ultrasonic/distance";
-const char* ldrDataUrl = "http://192.168.1.7:5000/api/ldr/light";
-const char* servoControlUrl = "http://192.168.1.7:5000/api/servo/angle";
+const char* ledStatusUrl = "http://192.168.1.9:5000/api/led/status";
+const char* dhtDataUrl = "http://192.168.1.9:5000/api/dht/dhtdata";
+const char* pirDataUrl = "http://192.168.1.9:5000/api/pir/motion";
+const char* ultrasonicDataUrl = "http://192.168.1.9:5000/api/ultrasonic/distance";
+const char* ldrDataUrl = "http://192.168.1.9:5000/api/ldr/light";
+const char* servoControlUrl = "http://192.168.1.9:5000/api/servo/angle";
+const char* ldrledAutomationUrl = "http://192.168.1.9:5000/api/ldrledautomation/status";
 
 WiFiClient client;
 
@@ -100,6 +101,9 @@ void controlServo() {
 void loop() {
   if (WiFi.status() == WL_CONNECTED) {
 
+    // Fetch automation status from the server
+    bool isLdrLedAutomationActive = fetchLdrLedAutomationStatusFromServer();
+
     // DHT11 Data
     float humidity = dht.readHumidity();
     float temperature = dht.readTemperature();
@@ -133,6 +137,19 @@ void loop() {
     sendPostRequest(ldrDataUrl, ldrPostData);
 
 
+    // ldr led automation only works automation is on
+    if (isLdrLedAutomationActive) {
+    //LDR + LED Automation
+    if (ldrValue == 0) {
+      // If light is detected, turn off the LED
+    sendLEDStatus("OFF");  // Update LED status to server
+    }else if (ldrValue == 1){
+    // If no light is detected, turn on the LED    
+    sendLEDStatus("ON");  // Update LED status to server
+    }
+    }
+
+
     // Servo Control
     controlServo();
      
@@ -140,3 +157,34 @@ void loop() {
 
   delay(1000);  // 5-second delay between loops
 }
+
+// Function to send LED status to the server
+void sendLEDStatus(String status) {
+  
+
+    String postData = "{\"status\": \"" + status + "\"}";
+    sendPostRequest(ledStatusUrl, postData);
+
+  
+}
+
+
+bool fetchLdrLedAutomationStatusFromServer() {
+  HTTPClient httpldrled;
+  httpldrled.begin(client, ldrledAutomationUrl);
+  int httpCode = httpldrled.GET();
+
+  if (httpCode > 0) {
+    String payload = httpldrled.getString();
+    if (payload.indexOf("true") > -1) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  httpldrled.end();
+  return true;  // Default to true if the request fails
+}
+
+

@@ -10,6 +10,7 @@ import pirRoutes from "./routes/pir.route.js";
 import ultrasonicRoutes from "./routes/ultrasonic.route.js";
 import ldrRoutes from "./routes/ldr.route.js";
 import servoRoutes from "./routes/servo.route.js";
+import ldrledautomationRoutes from './routes/ldrledautomation.route.js';
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.use('/api/pir', pirRoutes);
 app.use('/api/ultrasonic', ultrasonicRoutes);
 app.use('/api/ldr', ldrRoutes);
 app.use('/api/servo', servoRoutes);
+app.use('/api/ldrledautomation', ldrledautomationRoutes);
 
 // Initialize WebSocket server
 initWebSocketServer(server);
