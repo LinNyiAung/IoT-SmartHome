@@ -23,12 +23,12 @@ const char* password = "09799839789";
 DHT dht(DHTPIN, DHTTYPE);
 
 // API URLs
-const char* ledStatusUrl = "http://192.168.1.10:5000/api/led/status";
-const char* dhtDataUrl = "http://192.168.1.10:5000/api/dht/dhtdata";
-const char* pirDataUrl = "http://192.168.1.10:5000/api/pir/motion";
-const char* ultrasonicDataUrl = "http://192.168.1.10:5000/api/ultrasonic/distance";
-const char* ldrDataUrl = "http://192.168.1.10:5000/api/ldr/light";
-const char* servoControlUrl = "http://192.168.1.10:5000/api/servo/angle";
+const char* ledStatusUrl = "http://192.168.1.7:5000/api/led/status";
+const char* dhtDataUrl = "http://192.168.1.7:5000/api/dht/dhtdata";
+const char* pirDataUrl = "http://192.168.1.7:5000/api/pir/motion";
+const char* ultrasonicDataUrl = "http://192.168.1.7:5000/api/ultrasonic/distance";
+const char* ldrDataUrl = "http://192.168.1.7:5000/api/ldr/light";
+const char* servoControlUrl = "http://192.168.1.7:5000/api/servo/angle";
 
 WiFiClient client;
 

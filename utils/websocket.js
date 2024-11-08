@@ -3,6 +3,7 @@ import DHT from "../models/dht.model.js";
 import PIR from "../models/pir.model.js";
 import Ultrasonic from "../models/ultrasonic.model.js";
 import LDR from "../models/ldr.model.js";
+import LED from "../models/led.model.js";
 
 export const initWebSocketServer = (server) => {
   const wss = new WebSocketServer({ server });
@@ -19,6 +20,7 @@ export const initWebSocketServer = (server) => {
         const pirData = await PIR.findOne(); 
         const ultrasonicData = await Ultrasonic.findOne();
         const ldrData = await LDR.findOne();
+        const ledData = await LED.findOne();
 
         ws.send(JSON.stringify({
           temperature: dhtData?.temperature || 0,
@@ -26,6 +28,7 @@ export const initWebSocketServer = (server) => {
           motionDetected: pirData?.motionDetected || false,
           distance: ultrasonicData?.distance || 0,
           lightIntensity: ldrData?.lightIntensity || 0,
+          ledStatus: ledData?.status || 'OFF'
         }));
       } catch (error) {
         console.error("Error broadcasting sensor data:", error);

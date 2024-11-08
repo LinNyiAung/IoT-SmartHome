@@ -15,6 +15,7 @@
     <h2>LED Control</h2>
     <button onclick="controlLED('ON')">Turn ON</button>
     <button onclick="controlLED('OFF')">Turn OFF</button>
+    <p id="ledStatus">LED Status: --</p>
   </section>
 
   <!-- DHT11 Sensor Data Section -->
@@ -111,6 +112,7 @@
       document.getElementById("motionStatus").textContent = `Motion: ${data.motionDetected ? 'Detected' : 'Not Detected'}`;
       document.getElementById("distance").textContent = `Distance: ${data.distance} cm`;
       document.getElementById("lightIntensity").textContent = `Light Intensity: ${data.lightIntensity ? 'Not Detected' : 'Detected'}`;
+      document.getElementById("ledStatus").textContent = `LED Status: ${data.ledStatus}`;
     };
 
     socket.onerror = (error) => {
