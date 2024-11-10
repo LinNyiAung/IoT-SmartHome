@@ -36,6 +36,7 @@ const char* servoControlUrl = "http://192.168.1.9:5000/api/servo/angle";
 const char* ldrledAutomationUrl = "http://192.168.1.9:5000/api/ldrledautomation/status";
 const char* currentDataUrl = "http://192.168.1.9:5000/api/current/currentdata";
 const char* bldcfanStatusUrl = "http://192.168.1.9:5000/api/bldcfan/bldcfanstatus";
+const char* dhtfanAutomationUrl = "http://192.168.1.9:5000/api/dhtfanautomation/status";
 
 WiFiClient client;
 
@@ -123,6 +124,7 @@ void loop() {
 
     // Fetch automation status from the server
     bool isLdrLedAutomationActive = fetchLdrLedAutomationStatusFromServer();
+    bool isDhtFanAutomationActive = fetchDhtFanAutomationStatusFromServer();
 
     // DHT11 Data
     float humidity = dht.readHumidity();
@@ -131,10 +133,24 @@ void loop() {
       String dhtPostData = "{\"temperature\":" + String(temperature) + ",\"humidity\":" + String(humidity) + "}";
       sendPostRequest(dhtDataUrl, dhtPostData);
     }
+    
 
     controlLED();
 
     controlBLDCFAN();
+
+
+        // dht fan automation only works automation is on
+    if (isDhtFanAutomationActive) {
+    //DHT + FAN Automation
+    if (temperature > 35) {
+      // If temperature high, turn on the Fan
+    sendFANStatus("ON");  // Update Fan status to server
+    }else{
+    // If temperature low, turn off the Fan    
+    sendFANStatus("OFF");  // Update Fan status to server
+    }
+    }
 
     // PIR Sensor Data
     int motionDetected = digitalRead(PIR_PIN);
@@ -204,6 +220,16 @@ void sendLEDStatus(String status) {
   
 }
 
+// Function to send FAN status to the server
+void sendFANStatus(String status) {
+  
+
+    String postData = "{\"status\": \"" + status + "\"}";
+    sendPostRequest(bldcfanStatusUrl, postData);
+
+  
+}
+
 
 bool fetchLdrLedAutomationStatusFromServer() {
   HTTPClient httpldrled;
@@ -220,6 +246,24 @@ bool fetchLdrLedAutomationStatusFromServer() {
   }
 
   httpldrled.end();
+  return true;  // Default to true if the request fails
+}
+
+bool fetchDhtFanAutomationStatusFromServer() {
+  HTTPClient httpdhtfan;
+  httpdhtfan.begin(client, dhtfanAutomationUrl);
+  int httpCode = httpdhtfan.GET();
+
+  if (httpCode > 0) {
+    String payload = httpdhtfan.getString();
+    if (payload.indexOf("true") > -1) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  httpdhtfan.end();
   return true;  // Default to true if the request fails
 }
 
