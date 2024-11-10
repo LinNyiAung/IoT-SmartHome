@@ -12,6 +12,7 @@ import ldrRoutes from "./routes/ldr.route.js";
 import servoRoutes from "./routes/servo.route.js";
 import ldrledautomationRoutes from './routes/ldrledautomation.route.js';
 import currentRoutes from "./routes/current.route.js";
+import bldcfanRoutes from "./routes/bldcfan.route.js";
 
 dotenv.config();
 
@@ -36,6 +37,7 @@ app.use('/api/ldr', ldrRoutes);
 app.use('/api/servo', servoRoutes);
 app.use('/api/ldrledautomation', ldrledautomationRoutes);
 app.use('/api/current', currentRoutes);
+app.use('/api/bldcfan', bldcfanRoutes);
 
 // Initialize WebSocket server
 initWebSocketServer(server);

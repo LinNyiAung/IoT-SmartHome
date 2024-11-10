@@ -5,6 +5,7 @@ import Ultrasonic from "../models/ultrasonic.model.js";
 import LDR from "../models/ldr.model.js";
 import LED from "../models/led.model.js";
 import Current from "../models/current.model.js";
+import BLDCFAN from "../models/bldcfan.model.js";
 
 export const initWebSocketServer = (server) => {
   const wss = new WebSocketServer({ server });
@@ -23,6 +24,7 @@ export const initWebSocketServer = (server) => {
         const ldrData = await LDR.findOne();
         const ledData = await LED.findOne();
         const currentData = await Current.findOne();
+        const bldcfanData = await BLDCFAN.findOne();
 
         ws.send(JSON.stringify({
           temperature: dhtData?.temperature || 0,
@@ -32,7 +34,8 @@ export const initWebSocketServer = (server) => {
           lightIntensity: ldrData?.lightIntensity || 0,
           ledStatus: ledData?.status || 'OFF',
           voltage: currentData?.voltage || 0,
-          current: currentData?.current || 0
+          current: currentData?.current || 0,
+          bldcfanStatus: bldcfanData?.status || 'OFF',
         }));
       } catch (error) {
         console.error("Error broadcasting sensor data:", error);

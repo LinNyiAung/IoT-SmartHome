@@ -19,6 +19,7 @@ const char* password = "09799839789";
 #define PIR_PIN D2
 #define SERVO_PIN D3
 #define CURRENT_PIN A0
+#define RELAY_PIN D8
 
 float sensitivity = 0.185;
 
@@ -34,6 +35,7 @@ const char* ldrDataUrl = "http://192.168.1.9:5000/api/ldr/light";
 const char* servoControlUrl = "http://192.168.1.9:5000/api/servo/angle";
 const char* ldrledAutomationUrl = "http://192.168.1.9:5000/api/ldrledautomation/status";
 const char* currentDataUrl = "http://192.168.1.9:5000/api/current/currentdata";
+const char* bldcfanStatusUrl = "http://192.168.1.9:5000/api/bldcfan/bldcfanstatus";
 
 WiFiClient client;
 
@@ -59,6 +61,7 @@ void sendPostRequest(const char* url, String postData) {
 void setup() {
   Serial.begin(115200);
   pinMode(LED_PIN, OUTPUT);
+  pinMode(RELAY_PIN, OUTPUT);
   pinMode(PIR_PIN, INPUT);
   pinMode(TRIG_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT);
@@ -85,6 +88,19 @@ void controlLED() {
     digitalWrite(LED_PIN, ledStatus == "ON" ? HIGH : LOW);
   }
   httpLed.end();
+}
+
+
+void controlBLDCFAN() {
+  HTTPClient httpBldcfan;
+  httpBldcfan.begin(client, bldcfanStatusUrl);
+  int httpCode = httpBldcfan.GET();
+  if (httpCode == HTTP_CODE_OK) {
+    String bldcfanStatus = httpBldcfan.getString();
+    Serial.println("BLDC Fan Status: " + bldcfanStatus);
+    digitalWrite(RELAY_PIN, bldcfanStatus == "ON" ? HIGH : LOW);
+  }
+  httpBldcfan.end();
 }
 
 void controlServo() {
@@ -117,6 +133,8 @@ void loop() {
     }
 
     controlLED();
+
+    controlBLDCFAN();
 
     // PIR Sensor Data
     int motionDetected = digitalRead(PIR_PIN);

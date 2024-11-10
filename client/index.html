@@ -24,6 +24,15 @@
   <button id="ldrledautomationToggle" onclick="ldrledtoggleAutomation()">Turn Off LDR LED Automation</button>
 </section>
 
+
+    <!-- BLDC Fan Control Section -->
+    <section>
+      <h2>BLDC Fan Control</h2>
+      <button onclick="controlBLDCFAN('ON')">Turn ON</button>
+      <button onclick="controlBLDCFAN('OFF')">Turn OFF</button>
+      <p id="bldcfanStatus">BLDC Fan Status: --</p>
+    </section>
+
   <!-- DHT11 Sensor Data Section -->
   <section class="sensor-data">
     <h2>Temperature and Humidity</h2>
@@ -81,6 +90,22 @@
         alert(result.message);
       } catch (error) {
         console.error("Error controlling LED:", error);
+      }
+    }
+
+
+    // BLDC Fan control function
+    async function controlBLDCFAN(status) {
+      try {
+        const response = await fetch(`${apiUrl}/bldcfan/bldcfanstatus`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+        const result = await response.json();
+        alert(result.message);
+      } catch (error) {
+        console.error("Error controlling BLDC Fan:", error);
       }
     }
 
@@ -169,6 +194,7 @@ function ldrledupdateAutomationButton() {
       document.getElementById("ledStatus").textContent = `LED Status: ${data.ledStatus}`;
       document.getElementById("voltage").textContent = `Voltage: ${data.voltage}`;
       document.getElementById("current").textContent = `Current: ${data.current}`;
+      document.getElementById("bldcfanStatus").textContent = `BLDC Fan Status: ${data.bldcfanStatus}`;
     };
 
     socket.onerror = (error) => {
