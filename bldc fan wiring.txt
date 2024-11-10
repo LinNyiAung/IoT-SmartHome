@@ -1,0 +1,26 @@
+Components Needed:
+NodeMCU ESP8266
+Relay Module (typically a 5V relay module)
+Brushless DC Fan
+Battery Power Supply (to power the fan)
+Jumper Wires
+Wiring:
+Relay Module to NodeMCU:
+
+VCC of the relay module → 3.3V or 5V on the NodeMCU.
+GND of the relay module → GND on the NodeMCU.
+IN1 (or IN2, depending on the relay pin) on the relay module → GPIO Pin (e.g., D1) on the NodeMCU.
+Power Source (Battery) to the Fan:
+
+Red (positive) wire of the battery → COM (Common) on the relay.
+Black (negative) wire of the battery → GND of the fan.
+NO (Normally Open) of the relay → Red wire of the fan.
+How it Works:
+The NodeMCU will control the relay. When the relay is activated (i.e., the GPIO pin goes HIGH), the relay will close the circuit, allowing the battery to power the fan.
+When the relay is deactivated (GPIO pin goes LOW), the circuit opens, and the fan will turn off.
+Connection Diagram:
+NodeMCU → Relay Module
+Relay Module → Fan and Power Supply
+Fan's Red wire connects to NO terminal of the relay.
+Fan's Black wire connects to the negative terminal of the battery.
+The positive terminal of the battery connects to the COM terminal of the relay.

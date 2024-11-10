@@ -1,0 +1,26 @@
+Components:
+Battery (power source)
+ACS712 Current Sensor
+NodeMCU ESP8266
+Wiring:
+Connect the Battery to the ACS712:
+
+Red Cable (Positive) from the battery goes to the IP+ (Current Input Positive) terminal of the ACS712 sensor.
+Black Cable (Negative) from the battery goes directly to the GND pin of the NodeMCU and to the GND pin of the ACS712.
+Output from ACS712 to NodeMCU:
+
+IP- (Current Input Negative) terminal from the ACS712 connects to the Vin pin of the NodeMCU if the battery is 5V, or the 3V3 pin if the battery is 3.3V.
+Connecting ACS712 Signal Pin to NodeMCU:
+
+Connect the Vout pin of the ACS712 to one of the analog pins (such as A0) of the NodeMCU ESP8266 to read the current data.
+Power the ACS712 Sensor:
+
+VCC of the ACS712 connects to the 5V or 3.3V pin (same as what the NodeMCU is using) depending on your battery.
+GND of the ACS712 connects to the common ground (battery black cable and NodeMCU GND).
+Diagram:
+Battery (+) ➡️ IP+ (ACS712)
+Battery (-) ➡️ GND (NodeMCU & ACS712)
+IP- (ACS712) ➡️ Vin (NodeMCU)
+Vout (ACS712) ➡️ A0 (NodeMCU)
+VCC (ACS712) ➡️ 5V/3V3 (NodeMCU)
+GND (ACS712) ➡️ GND (NodeMCU)

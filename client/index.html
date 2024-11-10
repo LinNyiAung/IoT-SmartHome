@@ -32,6 +32,14 @@
     <button onclick="fetchDHTData()">Refresh Data</button>
   </section>
 
+  <!-- Current Sensor Data Section -->
+  <section class="sensor-data">
+    <h2>Current</h2>
+    <p id="voltage">Voltage: -- </p>
+    <p id="current">Current: -- </p>
+    
+  </section>
+
   <!-- Motion Detection -->
   <section class="sensor-data">
     <h2>Motion Detection</h2>
@@ -159,6 +167,8 @@ function ldrledupdateAutomationButton() {
       document.getElementById("distance").textContent = `Distance: ${data.distance} cm`;
       document.getElementById("lightIntensity").textContent = `Light Intensity: ${data.lightIntensity ? 'Not Detected' : 'Detected'}`;
       document.getElementById("ledStatus").textContent = `LED Status: ${data.ledStatus}`;
+      document.getElementById("voltage").textContent = `Voltage: ${data.voltage}`;
+      document.getElementById("current").textContent = `Current: ${data.current}`;
     };
 
     socket.onerror = (error) => {

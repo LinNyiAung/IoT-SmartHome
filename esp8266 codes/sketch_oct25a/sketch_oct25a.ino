@@ -18,6 +18,9 @@ const char* password = "09799839789";
 #define LED_PIN D1
 #define PIR_PIN D2
 #define SERVO_PIN D3
+#define CURRENT_PIN A0
+
+float sensitivity = 0.185;
 
 // DHT11 setup
 DHT dht(DHTPIN, DHTTYPE);
@@ -30,6 +33,7 @@ const char* ultrasonicDataUrl = "http://192.168.1.9:5000/api/ultrasonic/distance
 const char* ldrDataUrl = "http://192.168.1.9:5000/api/ldr/light";
 const char* servoControlUrl = "http://192.168.1.9:5000/api/servo/angle";
 const char* ldrledAutomationUrl = "http://192.168.1.9:5000/api/ldrledautomation/status";
+const char* currentDataUrl = "http://192.168.1.9:5000/api/current/currentdata";
 
 WiFiClient client;
 
@@ -152,6 +156,20 @@ void loop() {
 
     // Servo Control
     controlServo();
+
+    //current sensor
+    int currentsensorValue = analogRead(CURRENT_PIN);
+  
+    // Convert the analog value to voltage
+    float voltage = currentsensorValue * (5.0 / 1024.0); // if using 5V reference
+    float current = (voltage - 2.5) / sensitivity; // Offset voltage 2.5V
+    String currentPostData = "{\"voltage\":" + String(voltage) + ",\"current\":" + String(current) + "}";
+    sendPostRequest(currentDataUrl, currentPostData);
+  
+    Serial.print("Current: ");
+    Serial.print(current);
+    Serial.print(voltage);
+    Serial.println(" A");
      
   }
 
