@@ -14,6 +14,7 @@ import ldrledautomationRoutes from './routes/ldrledautomation.route.js';
 import currentRoutes from "./routes/current.route.js";
 import bldcfanRoutes from "./routes/bldcfan.route.js";
 import dhtfanautomationRoutes from './routes/dhtfanautomation.route.js';
+import ultrasonicledautomationRoutes from './routes/ultrasonicledautomation.route.js';
 
 
 dotenv.config();
@@ -41,6 +42,7 @@ app.use('/api/ldrledautomation', ldrledautomationRoutes);
 app.use('/api/current', currentRoutes);
 app.use('/api/bldcfan', bldcfanRoutes);
 app.use('/api/dhtfanautomation', dhtfanautomationRoutes);
+app.use('/api/ultrasonicledautomation', ultrasonicledautomationRoutes);
 
 // Initialize WebSocket server
 initWebSocketServer(server);

@@ -6,8 +6,8 @@
 Servo myServo;
 
 // WiFi credentials
-const char* ssid = "MPT KTN";
-const char* password = "09799839789";
+const char* ssid = "GUSTO University";
+const char* password = "weloveGUSTO";
 
 // Sensor and device pins
 #define DHTPIN D4  
@@ -26,17 +26,19 @@ float sensitivity = 0.185;
 // DHT11 setup
 DHT dht(DHTPIN, DHTTYPE);
 
+
 // API URLs
-const char* ledStatusUrl = "http://192.168.1.9:5000/api/led/status";
-const char* dhtDataUrl = "http://192.168.1.9:5000/api/dht/dhtdata";
-const char* pirDataUrl = "http://192.168.1.9:5000/api/pir/motion";
-const char* ultrasonicDataUrl = "http://192.168.1.9:5000/api/ultrasonic/distance";
-const char* ldrDataUrl = "http://192.168.1.9:5000/api/ldr/light";
-const char* servoControlUrl = "http://192.168.1.9:5000/api/servo/angle";
-const char* ldrledAutomationUrl = "http://192.168.1.9:5000/api/ldrledautomation/status";
-const char* currentDataUrl = "http://192.168.1.9:5000/api/current/currentdata";
-const char* bldcfanStatusUrl = "http://192.168.1.9:5000/api/bldcfan/bldcfanstatus";
-const char* dhtfanAutomationUrl = "http://192.168.1.9:5000/api/dhtfanautomation/status";
+const char* ledStatusUrl = "http://192.168.10.60:5000/api/led/status";
+const char* dhtDataUrl = "http://192.168.10.60:5000/api/dht/dhtdata";
+const char* pirDataUrl = "http://192.168.10.60:5000/api/pir/motion";
+const char* ultrasonicDataUrl = "http://192.168.10.60:5000/api/ultrasonic/distance";
+const char* ldrDataUrl = "http://192.168.10.60:5000/api/ldr/light";
+const char* servoControlUrl = "http://192.168.10.60:5000/api/servo/angle";
+const char* ldrledAutomationUrl = "http://192.168.10.60:5000/api/ldrledautomation/status";
+const char* currentDataUrl = "http://192.168.10.60:5000/api/current/currentdata";
+const char* bldcfanStatusUrl = "http://192.168.10.60:5000/api/bldcfan/bldcfanstatus";
+const char* dhtfanAutomationUrl = "http://192.168.10.60:5000/api/dhtfanautomation/status";
+const char* ultrasonicledAutomationUrl = "http://192.168.10.60:5000/api/ultrasonicledautomation/status";
 
 WiFiClient client;
 
@@ -125,6 +127,7 @@ void loop() {
     // Fetch automation status from the server
     bool isLdrLedAutomationActive = fetchLdrLedAutomationStatusFromServer();
     bool isDhtFanAutomationActive = fetchDhtFanAutomationStatusFromServer();
+    bool isUltrasonicLedAutomationActive = fetchUltrasonicLedAutomationStatusFromServer();
 
     // DHT11 Data
     float humidity = dht.readHumidity();
@@ -168,6 +171,19 @@ void loop() {
     int distance = microsecondsToCentimeters(duration);
     String ultrasonicPostData = "{\"distance\":" + String(distance) + "}";
     sendPostRequest(ultrasonicDataUrl, ultrasonicPostData);
+
+
+    // ldr led automation only works automation is on
+    if (isUltrasonicLedAutomationActive) {
+    //LDR + LED Automation
+    if (distance < 100) {
+      // If light is detected, turn off the LED
+    sendLEDStatus("ON");  // Update LED status to server
+    }else{
+    // If no light is detected, turn on the LED    
+    sendLEDStatus("OFF");  // Update LED status to server
+    }
+    }
 
     // LDR Data
     int ldrValue = digitalRead(LDR_PIN);
@@ -264,6 +280,24 @@ bool fetchDhtFanAutomationStatusFromServer() {
   }
 
   httpdhtfan.end();
+  return true;  // Default to true if the request fails
+}
+
+bool fetchUltrasonicLedAutomationStatusFromServer() {
+  HTTPClient httpultarsonicled;
+  httpultarsonicled.begin(client, ultrasonicledAutomationUrl);
+  int httpCode = httpultarsonicled.GET();
+
+  if (httpCode > 0) {
+    String payload = httpultarsonicled.getString();
+    if (payload.indexOf("true") > -1) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  httpultarsonicled.end();
   return true;  // Default to true if the request fails
 }
 
