@@ -16,9 +16,9 @@ const char* password = "Gusto@123";
 #define TRIG_PIN D5
 #define ECHO_PIN D6
 #define LED_PIN D1
-#define PIR_PIN D2
+
 #define SERVO_PIN D3
-#define CURRENT_PIN A0
+
 #define RELAY_PIN D8
 
 float sensitivity = 0.185;
@@ -30,12 +30,12 @@ DHT dht(DHTPIN, DHTTYPE);
 // API URLs
 const char* ledStatusUrl = "http://192.168.10.60:5000/api/led/status";
 const char* dhtDataUrl = "http://192.168.10.60:5000/api/dht/dhtdata";
-const char* pirDataUrl = "http://192.168.10.60:5000/api/pir/motion";
+
 const char* ultrasonicDataUrl = "http://192.168.10.60:5000/api/ultrasonic/distance";
 const char* ldrDataUrl = "http://192.168.10.60:5000/api/ldr/light";
 const char* servoControlUrl = "http://192.168.10.60:5000/api/servo/angle";
 const char* ldrledAutomationUrl = "http://192.168.10.60:5000/api/ldrledautomation/status";
-const char* currentDataUrl = "http://192.168.10.60:5000/api/current/currentdata";
+
 const char* bldcfanStatusUrl = "http://192.168.10.60:5000/api/bldcfan/bldcfanstatus";
 const char* dhtfanAutomationUrl = "http://192.168.10.60:5000/api/dhtfanautomation/status";
 const char* ultrasonicledAutomationUrl = "http://192.168.10.60:5000/api/ultrasonicledautomation/status";
@@ -155,11 +155,7 @@ void loop() {
     }
     }
 
-    // PIR Sensor Data
-    int motionDetected = digitalRead(PIR_PIN);
-    Serial.println(motionDetected ? "Motion Detected!" : "No Motion");
-    String pirPostData = "{\"motionDetected\":" + String(motionDetected) + "}";
-    sendPostRequest(pirDataUrl, pirPostData);
+
 
     // Ultrasonic Data
     digitalWrite(TRIG_PIN, LOW);
@@ -207,19 +203,7 @@ void loop() {
     // Servo Control
     controlServo();
 
-    //current sensor
-    int currentsensorValue = analogRead(CURRENT_PIN);
-  
-    // Convert the analog value to voltage
-    float voltage = currentsensorValue * (5.0 / 1024.0); // if using 5V reference
-    float current = (voltage - 2.5) / sensitivity; // Offset voltage 2.5V
-    String currentPostData = "{\"voltage\":" + String(voltage) + ",\"current\":" + String(current) + "}";
-    sendPostRequest(currentDataUrl, currentPostData);
-  
-    Serial.print("Current: ");
-    Serial.print(current);
-    Serial.print(voltage);
-    Serial.println(" A");
+
      
   }
 
