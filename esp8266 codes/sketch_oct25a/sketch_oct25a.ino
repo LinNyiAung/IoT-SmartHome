@@ -4,14 +4,13 @@
 #include <Servo.h>
 
 Servo myServo;
+DHT dht(D4, DHT11);  // Initialize DHT sensor on pin D4
 
 // WiFi credentials
-const char* ssid = "GUSTO WiFi";
+const char* ssid = "GUSTO_209";
 const char* password = "Gusto@123";
 
-// Sensor and device pins
-#define DHTPIN D4  
-#define DHTTYPE DHT11
+// Pin assignments
 #define LDR_PIN D7
 #define TRIG_PIN D5
 #define ECHO_PIN D6
@@ -23,56 +22,57 @@ const char* password = "Gusto@123";
 
 float sensitivity = 0.185;
 
-// DHT11 setup
-DHT dht(DHTPIN, DHTTYPE);
+// Base API URL (set this dynamically if needed)
+String baseUrl = "http://192.168.10.181:5000/api";
 
-
-// API URLs
-const char* ledStatusUrl = "http://192.168.10.60:5000/api/led/status";
-const char* dhtDataUrl = "http://192.168.10.60:5000/api/dht/dhtdata";
-const char* pirDataUrl = "http://192.168.10.60:5000/api/pir/motion";
-const char* ultrasonicDataUrl = "http://192.168.10.60:5000/api/ultrasonic/distance";
-const char* ldrDataUrl = "http://192.168.10.60:5000/api/ldr/light";
-const char* servoControlUrl = "http://192.168.10.60:5000/api/servo/angle";
-const char* ldrledAutomationUrl = "http://192.168.10.60:5000/api/ldrledautomation/status";
-const char* currentDataUrl = "http://192.168.10.60:5000/api/current/currentdata";
-const char* bldcfanStatusUrl = "http://192.168.10.60:5000/api/bldcfan/bldcfanstatus";
-const char* dhtfanAutomationUrl = "http://192.168.10.60:5000/api/dhtfanautomation/status";
-const char* ultrasonicledAutomationUrl = "http://192.168.10.60:5000/api/ultrasonicledautomation/status";
+// API endpoints (constructed dynamically)
+String ledStatusUrl = baseUrl + "/led/status";
+String dhtDataUrl = baseUrl + "/dht/dhtdata";
+String pirDataUrl = baseUrl + "/pir/motion";
+String ultrasonicDataUrl = baseUrl + "/ultrasonic/distance";
+String ldrDataUrl = baseUrl + "/ldr/light";
+String servoControlUrl = baseUrl + "/servo/angle";
+String ldrledAutomationUrl = baseUrl + "/ldrledautomation/status";
+String currentDataUrl = baseUrl + "/current/currentdata";
+String bldcfanStatusUrl = baseUrl + "/bldcfan/bldcfanstatus";
+String dhtfanAutomationUrl = baseUrl + "/dhtfanautomation/status";
+String ultrasonicledAutomationUrl = baseUrl + "/ultrasonicledautomation/status";
 
 WiFiClient client;
 
-// Helper functions
 long microsecondsToCentimeters(long microseconds) {
   return microseconds / 29 / 2;
 }
 
-void sendPostRequest(const char* url, String postData) {
+void sendPostRequest(String url, String postData) {
   HTTPClient http;
   http.begin(client, url);
   http.addHeader("Content-Type", "application/json");
   int httpCode = http.POST(postData);
-
-  if (httpCode > 0) {
-    Serial.println("Data sent successfully: " + postData);
-  } else {
-    Serial.println("Failed to send data: " + postData);
-  }
+  Serial.println(httpCode > 0 ? "Data sent: " + postData : "Failed to send: " + postData);
   http.end();
+}
+
+String fetchData(String url) {
+  HTTPClient http;
+  http.begin(client, url);
+  int httpCode = http.GET();
+  String payload = (httpCode == HTTP_CODE_OK) ? http.getString() : "";
+  http.end();
+  return payload;
+}
+
+bool fetchAutomationStatus(String url) {
+  return fetchData(url).indexOf("true") > -1;
 }
 
 void setup() {
   Serial.begin(115200);
-  pinMode(LED_PIN, OUTPUT);
-  pinMode(RELAY_PIN, OUTPUT);
-  pinMode(PIR_PIN, INPUT);
-  pinMode(TRIG_PIN, OUTPUT);
-  pinMode(ECHO_PIN, INPUT);
-  myServo.attach(SERVO_PIN);
-    myServo.write(0);
+  pinMode(LED_PIN, OUTPUT); pinMode(RELAY_PIN, OUTPUT); pinMode(PIR_PIN, INPUT);
+  pinMode(TRIG_PIN, OUTPUT); pinMode(ECHO_PIN, INPUT);
+  myServo.attach(SERVO_PIN); myServo.write(0);
   dht.begin();
-
-  // WiFi connection
+  
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
@@ -81,224 +81,80 @@ void setup() {
   Serial.println("Connected to WiFi");
 }
 
-void controlLED() {
-  HTTPClient httpLed;
-  httpLed.begin(client, ledStatusUrl);
-  int httpCode = httpLed.GET();
-  if (httpCode == HTTP_CODE_OK) {
-    String ledStatus = httpLed.getString();
-    Serial.println("LED Status: " + ledStatus);
-    digitalWrite(LED_PIN, ledStatus == "ON" ? HIGH : LOW);
-  }
-  httpLed.end();
-}
-
-
-void controlBLDCFAN() {
-  HTTPClient httpBldcfan;
-  httpBldcfan.begin(client, bldcfanStatusUrl);
-  int httpCode = httpBldcfan.GET();
-  if (httpCode == HTTP_CODE_OK) {
-    String bldcfanStatus = httpBldcfan.getString();
-    Serial.println("BLDC Fan Status: " + bldcfanStatus);
-    digitalWrite(RELAY_PIN, bldcfanStatus == "ON" ? HIGH : LOW);
-  }
-  httpBldcfan.end();
+void controlDevice(String url, uint8_t pin) {
+  digitalWrite(pin, fetchData(url) == "ON" ? HIGH : LOW);
 }
 
 void controlServo() {
-  HTTPClient httpServo;
-  httpServo.begin(client, servoControlUrl);
-  int httpCode = httpServo.GET();
-  if (httpCode == HTTP_CODE_OK) {
-    String servoAngle = httpServo.getString();
-    int angle = servoAngle.toInt(); // Convert string to int
-    if (angle >= 0 && angle <= 180) { // Valid angle range for a servo motor
-      myServo.write(angle); // Move servo to the angle
-      Serial.println("Servo moved to angle: " + String(angle));
-    }
+  int angle = fetchData(servoControlUrl).toInt();
+  if (angle >= 0 && angle <= 180) {
+    myServo.write(angle);
+    Serial.println("Servo moved to angle: " + String(angle));
   }
-  httpServo.end();
+}
+
+void sendSensorData() {
+  float humidity = dht.readHumidity(), temperature = dht.readTemperature();
+  if (!isnan(humidity) && !isnan(temperature)) {
+    sendPostRequest(dhtDataUrl, "{\"temperature\":" + String(temperature) + ",\"humidity\":" + String(humidity) + "}");
+  }
+}
+
+void controlFanAutomation(float temperature) {
+  if (fetchAutomationStatus(dhtfanAutomationUrl)) {
+    String fanStatus = (temperature > 35) ? "ON" : "OFF";
+    sendPostRequest(bldcfanStatusUrl, "{\"status\": \"" + fanStatus + "\"}");
+  }
 }
 
 void loop() {
   if (WiFi.status() == WL_CONNECTED) {
+    bool ldrLedActive = fetchAutomationStatus(ldrledAutomationUrl);
+    bool dhtFanActive = fetchAutomationStatus(dhtfanAutomationUrl);
+    bool ultrasonicLedActive = fetchAutomationStatus(ultrasonicledAutomationUrl);
 
-    // Fetch automation status from the server
-    bool isLdrLedAutomationActive = fetchLdrLedAutomationStatusFromServer();
-    bool isDhtFanAutomationActive = fetchDhtFanAutomationStatusFromServer();
-    bool isUltrasonicLedAutomationActive = fetchUltrasonicLedAutomationStatusFromServer();
+    // DHT Sensor
+    sendSensorData();
 
-    // DHT11 Data
-    float humidity = dht.readHumidity();
-    float temperature = dht.readTemperature();
-    if (!isnan(humidity) && !isnan(temperature)) {
-      String dhtPostData = "{\"temperature\":" + String(temperature) + ",\"humidity\":" + String(humidity) + "}";
-      sendPostRequest(dhtDataUrl, dhtPostData);
-    }
+    controlDevice(ledStatusUrl, LED_PIN);
+    controlDevice(bldcfanStatusUrl, RELAY_PIN);
+    controlServo();
     
-
-    controlLED();
-
-    controlBLDCFAN();
-
-
-        // dht fan automation only works automation is on
-    if (isDhtFanAutomationActive) {
-    //DHT + FAN Automation
-    if (temperature > 35) {
-      // If temperature high, turn on the Fan
-    sendFANStatus("ON");  // Update Fan status to server
-    }else{
-    // If temperature low, turn off the Fan    
-    sendFANStatus("OFF");  // Update Fan status to server
-    }
-    }
-
-    // PIR Sensor Data
+    // PIR Sensor
     int motionDetected = digitalRead(PIR_PIN);
-    Serial.println(motionDetected ? "Motion Detected!" : "No Motion");
-    String pirPostData = "{\"motionDetected\":" + String(motionDetected) + "}";
-    sendPostRequest(pirDataUrl, pirPostData);
+    sendPostRequest(pirDataUrl, "{\"motionDetected\":" + String(motionDetected) + "}");
 
-    // Ultrasonic Data
-    digitalWrite(TRIG_PIN, LOW);
-    delayMicroseconds(2);
-    digitalWrite(TRIG_PIN, HIGH);
-    delayMicroseconds(10);
+    // Ultrasonic Sensor
+    digitalWrite(TRIG_PIN, LOW); delayMicroseconds(2);
+    digitalWrite(TRIG_PIN, HIGH); delayMicroseconds(10);
     digitalWrite(TRIG_PIN, LOW);
     long duration = pulseIn(ECHO_PIN, HIGH);
     int distance = microsecondsToCentimeters(duration);
-    String ultrasonicPostData = "{\"distance\":" + String(distance) + "}";
-    sendPostRequest(ultrasonicDataUrl, ultrasonicPostData);
+    sendPostRequest(ultrasonicDataUrl, "{\"distance\":" + String(distance) + "}");
 
-
-    // ldr led automation only works automation is on
-    if (isUltrasonicLedAutomationActive) {
-    //LDR + LED Automation
-    if (distance < 100) {
-      // If light is detected, turn off the LED
-    sendLEDStatus("ON");  // Update LED status to server
-    }else{
-    // If no light is detected, turn on the LED    
-    sendLEDStatus("OFF");  // Update LED status to server
-    }
-    }
-
-    // LDR Data
+    // LDR Sensor
     int ldrValue = digitalRead(LDR_PIN);
-    String ldrPostData = "{\"lightIntensity\":" + String(ldrValue) + "}";
-    sendPostRequest(ldrDataUrl, ldrPostData);
+    sendPostRequest(ldrDataUrl, "{\"lightIntensity\":" + String(ldrValue) + "}");
 
-
-    // ldr led automation only works automation is on
-    if (isLdrLedAutomationActive) {
-    //LDR + LED Automation
-    if (ldrValue == 0) {
-      // If light is detected, turn off the LED
-    sendLEDStatus("OFF");  // Update LED status to server
-    }else if (ldrValue == 1){
-    // If no light is detected, turn on the LED    
-    sendLEDStatus("ON");  // Update LED status to server
-    }
+    // LDR + LED Automation
+    if (ldrLedActive) {
+      sendPostRequest(ledStatusUrl, ldrValue == 0 ? "{\"status\": \"OFF\"}" : "{\"status\": \"ON\"}");
     }
 
+    // Ultrasonic + LED Automation
+    if (ultrasonicLedActive) {
+      sendPostRequest(ledStatusUrl, distance > 30 ? "{\"status\": \"OFF\"}" : "{\"status\": \"ON\"}");
+    }
 
-    // Servo Control
-    controlServo();
+    // DHT + Fan Automation
+    controlFanAutomation(dht.readTemperature());
 
-    //current sensor
-    int currentsensorValue = analogRead(CURRENT_PIN);
-  
-    // Convert the analog value to voltage
-    float voltage = currentsensorValue * (5.0 / 1024.0); // if using 5V reference
-    float current = (voltage - 2.5) / sensitivity; // Offset voltage 2.5V
-    String currentPostData = "{\"voltage\":" + String(voltage) + ",\"current\":" + String(current) + "}";
-    sendPostRequest(currentDataUrl, currentPostData);
-  
-    Serial.print("Current: ");
-    Serial.print(current);
-    Serial.print(voltage);
-    Serial.println(" A");
-     
+    // Current Sensor
+    int currentValue = analogRead(CURRENT_PIN);
+    float voltage = currentValue * (5.0 / 1024.0);
+    float current = (voltage - 2.5) / sensitivity;
+    sendPostRequest(currentDataUrl, "{\"voltage\":" + String(voltage) + ",\"current\":" + String(current) + "}");
+
+    delay(1000);
   }
-
-  delay(1000);  // 5-second delay between loops
 }
-
-// Function to send LED status to the server
-void sendLEDStatus(String status) {
-  
-
-    String postData = "{\"status\": \"" + status + "\"}";
-    sendPostRequest(ledStatusUrl, postData);
-
-  
-}
-
-// Function to send FAN status to the server
-void sendFANStatus(String status) {
-  
-
-    String postData = "{\"status\": \"" + status + "\"}";
-    sendPostRequest(bldcfanStatusUrl, postData);
-
-  
-}
-
-
-bool fetchLdrLedAutomationStatusFromServer() {
-  HTTPClient httpldrled;
-  httpldrled.begin(client, ldrledAutomationUrl);
-  int httpCode = httpldrled.GET();
-
-  if (httpCode > 0) {
-    String payload = httpldrled.getString();
-    if (payload.indexOf("true") > -1) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  httpldrled.end();
-  return true;  // Default to true if the request fails
-}
-
-bool fetchDhtFanAutomationStatusFromServer() {
-  HTTPClient httpdhtfan;
-  httpdhtfan.begin(client, dhtfanAutomationUrl);
-  int httpCode = httpdhtfan.GET();
-
-  if (httpCode > 0) {
-    String payload = httpdhtfan.getString();
-    if (payload.indexOf("true") > -1) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  httpdhtfan.end();
-  return true;  // Default to true if the request fails
-}
-
-bool fetchUltrasonicLedAutomationStatusFromServer() {
-  HTTPClient httpultarsonicled;
-  httpultarsonicled.begin(client, ultrasonicledAutomationUrl);
-  int httpCode = httpultarsonicled.GET();
-
-  if (httpCode > 0) {
-    String payload = httpultarsonicled.getString();
-    if (payload.indexOf("true") > -1) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  httpultarsonicled.end();
-  return true;  // Default to true if the request fails
-}
-
-
