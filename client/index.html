@@ -83,8 +83,26 @@
     <button onclick="controlServo()">Set Angle</button>
   </section>
 
+  <!-- Camera Stream -->
+<!-- <section>
+  <h2>Camera Stream</h2>
+  <img id="cameraStream" src="http://localhost:5000/api/camera/stream" alt="Loading...">
+  <button onclick="refreshStream()">Refresh</button>
+</section> -->
+
+<section>
+  <h2>Camera Stream</h2>
+<iframe src="http://192.168.1.10" width="600" height="400" allowfullscreen></iframe>
+</section>
+
+
   <script>
     const apiUrl = 'http://localhost:5000/api';
+
+    // function refreshStream() {
+    // const cameraStream = document.getElementById("cameraStream");
+    // cameraStream.src = `http://localhost:5000/api/camera/stream?timestamp=${new Date().getTime()}`;
+    // }
 
     // LED control function
     async function controlLED(status) {
